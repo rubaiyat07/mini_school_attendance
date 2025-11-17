@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 use App\Http\Resources\StudentResource;
 use App\Models\Student;
+use App\Models\ClassModel;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
@@ -51,5 +52,24 @@ class StudentController extends Controller
     {
         $student->delete();
         return response()->noContent();
+    }
+
+    // Get unique classes
+    public function getClasses()
+    {
+        $classes = ClassModel::pluck('name');
+        return response()->json(['classes' => $classes]);
+    }
+
+    // Get sections for a specific class
+    public function getSections(Request $request)
+    {
+        $request->validate([
+            'class' => 'required|string',
+        ]);
+
+        $class = ClassModel::where('name', $request->class)->first();
+        $sections = $class ? $class->sections : [];
+        return response()->json(['sections' => $sections]);
     }
 }

@@ -34,8 +34,14 @@ class AttendanceController extends Controller
             'date' => 'required|date',
             'status' => 'required|in:Present,Absent,Late',
             'note' => 'nullable|string',
-            'recorded_by' => 'required|string|max:100',
         ]);
+
+        // Get student's class
+        $student = \App\Models\Student::find($validated['student_id']);
+        $validated['class'] = $student->class;
+
+        // Set recorded_by to authenticated user's name
+        $validated['recorded_by'] = auth()->user()->name;
 
         $attendance = Attendance::create($validated);
 
@@ -50,7 +56,6 @@ class AttendanceController extends Controller
     {
         $validated = $request->validate([
             'date' => 'required|date',
-            'recorded_by' => 'required|string|max:100',
             'attendances' => 'required|array',
             'attendances.*.student_id' => 'required|exists:students,id',
             'attendances.*.status' => 'required|in:Present,Absent,Late',
@@ -60,7 +65,13 @@ class AttendanceController extends Controller
         $createdRecords = [];
         foreach ($validated['attendances'] as $attendanceData) {
             $attendanceData['date'] = $validated['date'];
-            $attendanceData['recorded_by'] = $validated['recorded_by'];
+
+            // Get student's class
+            $student = \App\Models\Student::find($attendanceData['student_id']);
+            $attendanceData['class'] = $student->class;
+
+            // Set recorded_by to authenticated user's name
+            $attendanceData['recorded_by'] = auth()->user()->name;
 
             $record = Attendance::updateOrCreate(
                 ['student_id' => $attendanceData['student_id'], 'date' => $attendanceData['date']],
@@ -94,5 +105,18 @@ class AttendanceController extends Controller
     {
         $summary = $this->attendanceService->todaySummary();
         return response()->json(['data' => $summary]);
+    }
+
+    // Dashboard data
+    public function dashboardData()
+    {
+        $data = [
+            'total_students' => $this->attendanceService->getTotalStudents(),
+            'overall_attendance_rate' => $this->attendanceService->getOverallAttendanceRate(),
+            'attendance_rate_by_class' => $this->attendanceService->getAttendanceRateByClass(),
+            'attendance_rate_by_class_section' => $this->attendanceService->getAttendanceRateByClassSection(),
+        ];
+
+        return response()->json(['data' => $data]);
     }
 }
