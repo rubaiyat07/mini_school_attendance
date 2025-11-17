@@ -9,9 +9,19 @@ use Illuminate\Http\Request;
 
 class StudentController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return StudentResource::collection(Student::paginate(10));
+        $query = Student::query();
+
+        if ($request->has('class') && $request->class) {
+            $query->where('class', $request->class);
+        }
+
+        if ($request->has('section') && $request->section) {
+            $query->where('section', $request->section);
+        }
+
+        return StudentResource::collection($query->paginate(10));
     }
 
     public function store(Request $request)
