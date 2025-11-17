@@ -13,6 +13,14 @@ class StudentController extends Controller
     {
         $query = Student::query();
 
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%$search%")
+                  ->orWhere('student_id', 'like', "%$search%");
+            });
+        }
+
         if ($request->has('class') && $request->class) {
             $query->where('class', $request->class);
         }
